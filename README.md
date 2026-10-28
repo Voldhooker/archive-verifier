@@ -20,6 +20,9 @@ gh attestation verify archive-verify-linux-x64 --repo Voldhooker/archive-verifie
   --source-ref refs/tags/verifier-v<version> --deny-self-hosted-runners
 ```
 
+`gh attestation` and its flags need a current GitHub CLI from https://cli.github.com; some Linux distributions package
+an older one without it (Ubuntu 24.04 has 2.45).
+
 The attestation ties the file to the tagged source and the workflow run that built it, on GitHub's runners. To check it
 later without GitHub's API, keep the release's bundle and a copy of Sigstore's trusted root, taken once with
 `gh attestation trusted-root > trusted_root.jsonl`, and add `--bundle archive-verify.sigstore.json
