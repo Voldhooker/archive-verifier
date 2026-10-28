@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- What a verifier needs to check what the archive hands out: no server code, no ASP.NET Core, no EF Core, so the
+       verifier CLI runs offline with nothing else. It is published with the verifier. -->
+  <!-- The verifier's release platforms: a release restores this project for them, in locked mode. -->
+  <PropertyGroup>
+    <RuntimeIdentifiers>win-x64;linux-x64;osx-arm64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+  </ItemGroup>
+
+</Project>

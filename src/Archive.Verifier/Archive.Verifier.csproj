@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>archive-verify</AssemblyName>
+    <RootNamespace>Archive.Verifier</RootNamespace>
+    <!-- Releases are one self-contained file per platform. Both are set here, not on the command line, so the lock files
+         pin what a release restores and it restores locked; Archive.Evidence names the same platforms. -->
+    <RuntimeIdentifiers>win-x64;linux-x64;osx-arm64</RuntimeIdentifiers>
+    <PublishSingleFile>true</PublishSingleFile>
+  </PropertyGroup>
+
+  <!-- The Evidence library only: the verifier runs offline, without the server. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Archive.Evidence\Archive.Evidence.csproj" />
+  </ItemGroup>
+
+</Project>

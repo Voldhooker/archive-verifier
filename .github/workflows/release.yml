@@ -1,0 +1,77 @@
+# A verifier-v<major.minor.patch> tag: the build job tests and builds one self-contained file per platform and their
+# checksums, holding no write permission. The release job runs none of the project's code: it attests each file's
+# provenance (this source, this workflow, this run) and publishes the files, the checksums and the attestation bundle.
+name: Release
+
+on:
+  push:
+    tags: ['verifier-v*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: global.json
+
+      - run: dotnet restore Archive.Verifier.slnx -p:ContinuousIntegrationBuild=true
+      - run: dotnet build Archive.Verifier.slnx --no-restore --configuration Release -p:ContinuousIntegrationBuild=true
+      - run: dotnet test Archive.Verifier.slnx --no-build --configuration Release
+
+      - name: Publish
+        run: |
+          version="${GITHUB_REF_NAME#verifier-v}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "The tag must be verifier-v<major>.<minor>.<patch>." >&2
+            exit 1
+          fi
+          mkdir dist
+          for rid in win-x64 linux-x64 osx-arm64; do
+            dotnet publish src/Archive.Verifier --configuration Release --runtime "$rid" --self-contained \
+              -p:ContinuousIntegrationBuild=true -p:EnableCompressionInSingleFile=true -p:Version="$version" --output "out/$rid"
+          done
+          cp out/win-x64/archive-verify.exe dist/archive-verify-win-x64.exe
+          cp out/linux-x64/archive-verify dist/archive-verify-linux-x64
+          cp out/osx-arm64/archive-verify dist/archive-verify-osx-arm64
+          (cd dist && sha256sum archive-verify-* > SHA256SUMS)
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist
+
+      - id: attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/archive-verify-*
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          cp "$BUNDLE" dist/archive-verify.sigstore.json
+          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "Archive verifier ${GITHUB_REF_NAME#verifier-v}" \
+            --notes "How to check these files: see Get it in the README."

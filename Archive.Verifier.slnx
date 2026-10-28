@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Archive.Evidence/Archive.Evidence.csproj" />
+    <Project Path="src/Archive.Verifier/Archive.Verifier.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Archive.Evidence.Tests/Archive.Evidence.Tests.csproj" />
+  </Folder>
+</Solution>

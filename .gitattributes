@@ -1,0 +1,19 @@
+# Normalise to LF in the repo and on checkout, including when the working tree is opened from Windows.
+* text=auto eol=lf
+
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# HTTP request files: their multipart bodies must reach the server with CRLF line breaks, and the clients send the
+# file's own line endings.
+*.http text eol=crlf
+
+# Test fixtures must keep their exact bytes: archived originals are hashed.
+*.eml  binary
+*.mbox binary
+*.pdf  binary
+*.png  binary
+*.jpg  binary
+*.p7s  binary
+*.tsr  binary
