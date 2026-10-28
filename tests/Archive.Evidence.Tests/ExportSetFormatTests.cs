@@ -6,7 +6,7 @@ using Shouldly;
 namespace Archive.Evidence.Tests;
 
 /// <summary>
-/// Export set format 1 (ADR 0012) as sets already written hold it: one line of each kind, as text. The export tool and
+/// Export set formats 1 and 2 (ADR 0012) as sets already written hold them: one line of each kind, as text. The export tool and
 /// the verifier share these types, so a renamed property would pass every round trip between them while every set a
 /// customer holds stopped reading; these lines are what catches it.
 /// </summary>
@@ -17,6 +17,9 @@ public sealed class ExportSetFormatTests
 
     private const string Catalogue =
         """{"recordId":"0199e9a0-0000-7000-8000-00000000e103","legalEntityId":"0199e9a0-0000-7000-8000-0000000000c1","type":"file","status":"erased","retentionClass":"DK-BOOKKEEPING","classSource":"submission","profile":"DK 2026.1","customProfile":null,"recordDate":"2026-10-01","recordDateSource":"submitter","committedAt":"2026-10-20T08:00:00+00:00","sealedAt":"2026-10-20T09:00:00+00:00","expiry":"2031-12-31","retainUntil":"2032-01-01T00:00:00+00:00","held":false,"erasedAt":"2026-10-22T08:00:00+00:00","erasureBasis":"erasure request","purgedAt":null}""";
+
+    private const string CatalogueWithFields =
+        """{"recordId":"0199e9a0-0000-7000-8000-00000000e101","legalEntityId":"0199e9a0-0000-7000-8000-0000000000c1","type":"file","status":"sealed","retentionClass":"DK-BOOKKEEPING","classSource":"submission","profile":"DK 2026.1","customProfile":null,"recordDate":"2026-10-01","recordDateSource":"submitter","committedAt":"2026-10-20T08:00:00+00:00","sealedAt":"2026-10-20T09:00:00+00:00","expiry":"2031-12-31","retainUntil":"2032-01-01T00:00:00+00:00","held":false,"erasedAt":null,"erasureBasis":null,"purgedAt":null,"fields":{"invoice-number":"2026-0042","supplier":"12345678"}}""";
 
     private const string Entry =
         """{"sequence":5,"at":"2026-10-20T12:00:00+00:00","actor":"subject-1","action":"EraseRecord","target":"record/0199e9a0-0000-7000-8000-00000000e103","outcome":"succeeded","correlationId":null,"contentHash":"aa","hash":"bb"}""";
@@ -45,6 +48,16 @@ public sealed class ExportSetFormatTests
 
         // Assert
         (line.Status, line.Kept, line.RecordDate, line.ErasureBasis).ShouldBe(("erased", false, new DateOnly(2026, 10, 1), "erasure request"));
+    }
+
+    [Fact]
+    public void ACatalogueLineWithFields_ReadsAndWritesAsFormat2()
+    {
+        // Act
+        CatalogueLine line = RoundTrip<CatalogueLine>(CatalogueWithFields);
+
+        // Assert
+        line.Fields.ShouldNotBeNull().ShouldBe(new Dictionary<string, string> { ["invoice-number"] = "2026-0042", ["supplier"] = "12345678" });
     }
 
     [Fact]

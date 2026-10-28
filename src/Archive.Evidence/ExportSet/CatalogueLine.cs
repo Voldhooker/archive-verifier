@@ -4,8 +4,9 @@ namespace Archive.Evidence.ExportSet;
 
 /// <summary>
 /// One record in a set's catalogue, erased and purged ones included: what it is, under which rules it was kept, and what
-/// became of it. Ids, codes and dates only, never a name, an address or a subject, so the line can outlive the record:
-/// for an erased record it is all there is.
+/// became of it. Ids, codes and dates, never a name, an address or a subject, so the line can outlive the record: for an
+/// erased record it is all there is. From format 2, a kept record's fields too, the submitting system's facts, which can
+/// name someone; an erased record has none left.
 /// </summary>
 /// <param name="Type">email or file.</param>
 /// <param name="Status">committed, sealed, erased or purged.</param>
@@ -15,6 +16,10 @@ namespace Archive.Evidence.ExportSet;
 /// <param name="RecordDateSource">Where its record date came from, such as ownServerReceived or dateHeader.</param>
 /// <param name="Held">Whether an open legal hold covered it when the line was read.</param>
 /// <param name="ErasureBasis">The legal basis of its erasure, such as "retention ended"; null while kept.</param>
+/// <param name="Fields">
+/// Format 2: the facts the submitting system gave it at ingest, such as invoice-number, by key; empty for none or once
+/// erased. Absent from a format-1 line, and never written as null, so a format-1 line reads and writes as it was.
+/// </param>
 public sealed record CatalogueLine(
     Guid RecordId,
     Guid LegalEntityId,
@@ -33,7 +38,8 @@ public sealed record CatalogueLine(
     bool Held,
     DateTimeOffset? ErasedAt,
     string? ErasureBasis,
-    DateTimeOffset? PurgedAt)
+    DateTimeOffset? PurgedAt,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyDictionary<string, string>? Fields = null)
 {
     /// <summary>Whether the set holds a package for it: a record that is still kept. Read from the status, never written.</summary>
     [JsonIgnore]

@@ -4,13 +4,14 @@ using System.Text.Json.Serialization;
 namespace Archive.Evidence.ExportSet;
 
 /// <summary>
-/// The export set, format 1 (ADR 0012): a folder holding everything a tenant's archive holds, verifiable offline. Its
-/// files are written and read with these names and these JSON settings, by the server's endpoints, the export tool and
-/// the verifier alike.
+/// The export set (ADR 0012): a folder holding everything a tenant's archive holds, verifiable offline. Its files are
+/// written and read with these names and these JSON settings, by the server's endpoints, the export tool and the
+/// verifier alike. Format 2 adds each record's fields to its catalogue line; format 1 sets are read as they were.
 /// </summary>
 public static class ExportSetFormat
 {
-    public const int Current = 1;
+    /// <summary>The format the export tool writes.</summary>
+    public const int Current = 2;
 
     /// <summary>Written last, naming every other file with its hash: a set without it is unfinished.</summary>
     public const string Manifest = "export-set.json";
@@ -33,6 +34,9 @@ public static class ExportSetFormat
         WriteIndented = false,
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
     };
+
+    /// <summary>Whether this verifier reads a set of <paramref name="format"/>: 1, or 2 with fields on its lines.</summary>
+    public static bool Reads(int format) => format is 1 or Current;
 
     /// <summary>A record's package in the set: <c>records/&lt;id&gt;.zip</c>.</summary>
     public static string PackagePath(Guid recordId) => $"{RecordsFolder}/{recordId}.zip";

@@ -54,3 +54,23 @@ An anchor file's tree size and path show how many tenants that day's anchor held
 ## Consequences
 
 Every verifier reads format 1 for as long as sets written in it are kept. A change is a new format number, never an edit of format 1. The audit content hash, the chain hash and the anchor leaf are now a contract with every set as well as with every stored chain: their code lives in `Archive.Evidence`, and the domain calls it.
+
+## Format 2 (amended 2026-10-28)
+
+Records can carry fields: facts the submitting system gave them at ingest, such as `invoice-number` (plan
+2026-10-28-record-fields-and-tags, Q54). They belong in a set, being facts about the record as received, so format 2
+adds them, and changes nothing else.
+
+- **`export-set.json`** says format 2.
+- **Each `catalogue.jsonl` line** ends with `fields`: an object of key to value, `{}` for a record with none and for an
+  erased one, whose fields go with its other metadata. A field can name a person or a customer, so a format-2
+  catalogue is no longer free of personal data for kept records; the set as a whole never was, its packages holding
+  the originals.
+- **Format 1 stays as written,** as this ADR's consequences require: a format-1 line has no `fields` property, and a
+  format-1 set reads and verifies as before. The verifier reads both; the export tool writes format 2.
+- **Fields are the archive's statement, not sealed evidence.** A package is proven by its seal and timestamp, and a
+  line's lifecycle facts by the audit log it is reconciled with; a field is neither in the package nor in the log
+  (it can name someone, and the log is never erased). The manifest's hash covers it, as it covers every file, so a
+  field changed in a set is caught unless the manifest is rewritten to match, which the manifest can't prevent for any
+  file. A field is as trustworthy as the archive that exported it.
+- **Tags** (people's labels on records) are not in the set.

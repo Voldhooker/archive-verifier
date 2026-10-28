@@ -34,6 +34,20 @@ public sealed class ExportSetVerifierTests : IDisposable
     }
 
     [Fact]
+    public void ASetOfFormat1_ExportedBeforeFields_StillVerifies()
+    {
+        // Arrange: the manifest of a set written before format 2; its catalogue lines carry no fields either.
+        TestExportSet.WriteManifest(_set, TestExportSet.Manifest(_set) with { Format = 1 });
+
+        // Act
+        ExportSetVerification result = Verify(_set);
+
+        // Assert
+        result.Outcome.ShouldBe(ExportSetVerification.Valid, Describe(result));
+        File.ReadAllText(Path.Combine(_set, ExportSetFormat.Catalogue)).ShouldNotContain("\"fields\"");
+    }
+
+    [Fact]
     public void AWholeSet_IsValid_AndNamesTheNewestAnchoredEntry()
     {
         // Act: also with a trailing separator, as a shell completes a folder's name.
@@ -166,7 +180,7 @@ public sealed class ExportSetVerifierTests : IDisposable
         string first = ExportSetFormat.PackagePath(TestExportSet.First);
         return change switch
         {
-            "a manifest of another format" => Copy(s => Rewrite(s, ExportSetFormat.Manifest, t => t.Replace("\"format\":1", "\"format\":2", StringComparison.Ordinal)), refit: false),
+            "a manifest of another format" => Copy(s => Rewrite(s, ExportSetFormat.Manifest, t => t.Replace("\"format\":2", "\"format\":3", StringComparison.Ordinal)), refit: false),
             "a catalogue head after the audit head" => Copy(_ => { }, m => m with { CatalogueHead = m.AuditHead + 1 }),
             "a file the manifest doesn't name" => Copy(s => File.WriteAllText(Path.Combine(s, "records", "extra.txt"), "x"), refit: false),
             "a package changed, the manifest not" => Copy(s => FlipLastByte(Path.Combine(s, first)), refit: false),

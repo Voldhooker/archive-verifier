@@ -125,7 +125,8 @@ public sealed class SetExporter(ArchiveApi api, TextWriter log, TimeProvider tim
         {Warning}
 
         export-set.json      every other file with its SHA-256; written last
-        catalogue.jsonl      every record, erased and purged ones included: ids, rules, dates and states
+        catalogue.jsonl      every record, erased and purged ones included: ids, rules, dates and states,
+                             and from format 2 the fields a kept record was submitted with
         records/<id>.zip     each kept record's export package (ADR 0009), with its originals, data key, proof and timestamp
         audit/entries.jsonl  the tenant's audit log, oldest first, with both hashes of each entry
         audit/anchors/       each daily anchor's proof for this tenant (.json) and its RFC 3161 token (.tsr)
@@ -159,11 +160,18 @@ public sealed class SetExporter(ArchiveApi api, TextWriter log, TimeProvider tim
                 throw new InvalidOperationException($"{folder} holds an unfinished set of another tenant or legal entity: resume it as it was started.");
             }
 
+            // A set is one format throughout: lines written by an older tool would lack what this format adds.
+            if (resumed.Format != ExportSetFormat.Current)
+            {
+                throw new InvalidOperationException(
+                    $"{folder} holds an unfinished set of format {resumed.Format}, started by an older export tool: export into a new folder.");
+            }
+
             log.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Resuming the export started {resumed.StartedAt:O}."));
             return resumed;
         }
 
-        ExportState state = new(first.TenantId, legalEntityId, time.GetUtcNow(), first.Head, CatalogueRead: false, AuditHead: null);
+        ExportState state = new(first.TenantId, legalEntityId, time.GetUtcNow(), first.Head, CatalogueRead: false, AuditHead: null, ExportSetFormat.Current);
         await SaveAsync(folder, state, cancellation);
         return state;
     }
@@ -382,5 +390,7 @@ public sealed class SetExporter(ArchiveApi api, TextWriter log, TimeProvider tim
 
     /// <param name="CatalogueHead">The newest audit entry before the catalogue was read: every record committed up to it is in the catalogue.</param>
     /// <param name="AuditHead">The newest audit entry once every package was fetched: the log is exported up to it. Null until then.</param>
-    private sealed record ExportState(Guid TenantId, Guid? LegalEntityId, DateTimeOffset StartedAt, long CatalogueHead, bool CatalogueRead, long? AuditHead);
+    /// <param name="Format">The set's format; a state file written before format 2 has none, which reads as 1.</param>
+    private sealed record ExportState(
+        Guid TenantId, Guid? LegalEntityId, DateTimeOffset StartedAt, long CatalogueHead, bool CatalogueRead, long? AuditHead, int Format = 1);
 }

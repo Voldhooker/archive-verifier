@@ -71,12 +71,12 @@ public static class ExportSetVerifier
         try
         {
             ExportSetManifest? manifest = JsonSerializer.Deserialize<ExportSetManifest>(File.ReadAllBytes(path), ExportSetFormat.Json);
-            if (manifest is null || manifest.Format != ExportSetFormat.Current || manifest.Counts is null
+            if (manifest is null || !ExportSetFormat.Reads(manifest.Format) || manifest.Counts is null
                 || manifest.Files is null || manifest.Files.Any(f => f?.Path is null || f.Sha256 is null)
                 || manifest.Failed is null || manifest.Failed.Any(f => f?.Reason is null)
                 || manifest.CatalogueHead < 0 || manifest.CatalogueHead > manifest.AuditHead)
             {
-                checks.Add(new SetCheck(ManifestCheck, false, $"{ExportSetFormat.Manifest} is not export set format {ExportSetFormat.Current}"));
+                checks.Add(new SetCheck(ManifestCheck, false, $"{ExportSetFormat.Manifest} is not an export set format this verifier reads (1 or {ExportSetFormat.Current})"));
                 return null;
             }
 
